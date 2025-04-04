@@ -1,0 +1,7 @@
+* text=auto
+
+
+# What this does:
+# Tells Git:
+#  "Automatically detect text files and normalize line endings to LF in the repo."
+#  On Windows, Git converts them to CRLF when you check out the files.
