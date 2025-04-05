@@ -1,8 +1,8 @@
-import { transformationTypes } from "@/app/(root)/constants";
+// import { transformationTypes } from "@/app/(root)/constants";
 import { Document, model, models, Schema } from "mongoose";
-import { config, title } from "process";
+// import { config, title } from "process";
 
-import { Types } from 'mongoose';
+// import { Types } from 'mongoose';
 
 export interface IImage extends Document{
   title: string;
@@ -30,7 +30,7 @@ const ImageSchema = new Schema({
     title: { type: String, required : true},
     transformationType: { type: String, required : true},
     publicId: { type: String, required : true},
-    secureUrl: { type: URL, required : true},
+    secureUrl: { type: String, required: true },
     width :{type: Number},
     height :{type: Number},
     config: {type : Object},
