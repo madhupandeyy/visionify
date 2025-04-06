@@ -1,5 +1,6 @@
 import mongoose, { Mongoose } from "mongoose";
 
+// fetching mongodb url
 const MONGODB_URL = process.env.MONGODB_URL;
 
 interface MongooseConnection {

@@ -17,11 +17,7 @@ export async function createUser(user: CreateUserParams) {
   try {
     await connectToDatabase();
 
-    console.log("Webhook Triggered - Incoming User:", user); // ✅ Add this
-
     const newUser = await User.create(user);
-
-    console.log("User Successfully Created:", newUser); // ✅ Add this too
 
     return JSON.parse(JSON.stringify(newUser));
   } catch (error) {
@@ -29,17 +25,6 @@ export async function createUser(user: CreateUserParams) {
   }
 }
 
-// export async function createUser(user: CreateUserParams) {
-//   try {
-//     await connectToDatabase();
-
-//     const newUser = await User.create(user);
-
-//     return JSON.parse(JSON.stringify(newUser));
-//   } catch (error) {
-//     handleError(error);
-//   }
-// }
 
 // READ
 export async function getUserById(userId: string) {
