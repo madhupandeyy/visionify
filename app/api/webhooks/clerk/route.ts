@@ -276,21 +276,7 @@ export async function POST(req: Request) {
     });
   }
 
-  // Get raw body as string
   const body = await req.text();
-
-  // Debug logging
-  console.log("\n=== WEBHOOK VERIFICATION DEBUG ===");
-  console.log("Headers:", {
-    svix_id,
-    svix_timestamp,
-    svix_signature
-  });
-  console.log("Body preview:", body.substring(0, 100) + (body.length > 100 ? "..." : ""));
-  console.log("Body length:", body.length);
-  console.log("Body SHA256:", crypto.createHash('sha256').update(body).digest('hex'));
-  console.log("===============================\n");
-
   const wh = new Webhook(WEBHOOK_SECRET);
   let evt: WebhookEvent;
 
@@ -307,37 +293,44 @@ export async function POST(req: Request) {
     });
   }
 
-  // Parse the JSON body after verification
-  const payload = JSON.parse(body);
   const eventType = evt.type;
 
-  // CREATE
+  // CREATE USER
   if (eventType === "user.created") {
     const { id, email_addresses, image_url, first_name, last_name, username } = evt.data;
+
+    // Generate username if missing
+    const safeUsername = username || 
+      `user_${crypto.randomBytes(4).toString("hex")}_${Date.now()}`;
 
     const user = {
       clerkId: id,
       email: email_addresses[0].email_address,
-      username: username!,
+      username: safeUsername,
       firstName: first_name || "",
       lastName: last_name || "",
       photo: image_url,
     };
 
-    const newUser = await createUser(user);
+    try {
+      const newUser = await createUser(user);
 
-    if (newUser) {
-      await clerkClient.users.updateUserMetadata(id, {
-        publicMetadata: {
-          userId: newUser._id,
-        },
-      });
+      if (newUser) {
+        await clerkClient.users.updateUserMetadata(id, {
+          publicMetadata: {
+            userId: newUser._id,
+          },
+        });
+      }
+
+      return NextResponse.json({ message: "OK", user: newUser });
+    } catch (error) {
+      console.error("Error creating user:", error);
+      return new Response("Error creating user", { status: 500 });
     }
-
-    return NextResponse.json({ message: "OK", user: newUser });
   }
 
-  // UPDATE
+  // UPDATE USER
   if (eventType === "user.updated") {
     const { id, image_url, first_name, last_name, username } = evt.data;
 
@@ -348,20 +341,27 @@ export async function POST(req: Request) {
       photo: image_url,
     };
 
-    const updatedUser = await updateUser(id, user);
-
-    return NextResponse.json({ message: "OK", user: updatedUser });
+    try {
+      const updatedUser = await updateUser(id, user);
+      return NextResponse.json({ message: "OK", user: updatedUser });
+    } catch (error) {
+      console.error("Error updating user:", error);
+      return new Response("Error updating user", { status: 500 });
+    }
   }
 
-  // DELETE
+  // DELETE USER
   if (eventType === "user.deleted") {
     const { id } = evt.data;
 
-    const deletedUser = await deleteUser(id!);
-
-    return NextResponse.json({ message: "OK", user: deletedUser });
+    try {
+      const deletedUser = await deleteUser(id!);
+      return NextResponse.json({ message: "OK", user: deletedUser });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      return new Response("Error deleting user", { status: 500 });
+    }
   }
 
-  console.log(`Unhandled event type: ${eventType}`);
   return new Response("", { status: 200 });
 }
