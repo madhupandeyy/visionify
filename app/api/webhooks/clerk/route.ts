@@ -252,6 +252,7 @@ import { WebhookEvent } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { Webhook } from "svix";
+import crypto from "crypto";
 
 import { createUser, deleteUser, updateUser } from "@/lib/actions/user.actions";
 
@@ -277,7 +278,18 @@ export async function POST(req: Request) {
 
   // Get raw body as string
   const body = await req.text();
-  console.log("Raw webhook body:", body);
+
+  // Debug logging
+  console.log("\n=== WEBHOOK VERIFICATION DEBUG ===");
+  console.log("Headers:", {
+    svix_id,
+    svix_timestamp,
+    svix_signature
+  });
+  console.log("Body preview:", body.substring(0, 100) + (body.length > 100 ? "..." : ""));
+  console.log("Body length:", body.length);
+  console.log("Body SHA256:", crypto.createHash('sha256').update(body).digest('hex'));
+  console.log("===============================\n");
 
   const wh = new Webhook(WEBHOOK_SECRET);
   let evt: WebhookEvent;
@@ -295,10 +307,8 @@ export async function POST(req: Request) {
     });
   }
 
-  // Parse JSON after verification
+  // Parse the JSON body after verification
   const payload = JSON.parse(body);
-  console.log("Parsed webhook payload:", payload);
-
   const eventType = evt.type;
 
   // CREATE
@@ -352,6 +362,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: "OK", user: deletedUser });
   }
 
-  console.log(`Webhook with ID ${payload.id} and type ${eventType}`);
+  console.log(`Unhandled event type: ${eventType}`);
   return new Response("", { status: 200 });
 }
